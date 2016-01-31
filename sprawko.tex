@@ -1,0 +1,203 @@
+\documentclass[a4paper, 12pt]{article}
+\usepackage[T1]{fontenc}
+\usepackage{polski}
+\usepackage[utf8]{inputenc}
+\usepackage[polish]{babel}
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{wrapfig}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{listings}
+\lstset{language=R} 
+\usepackage[ddmmyyyy]{datetime}
+\renewcommand{\dateseparator}{/}
+\fancyhead{}
+\renewcommand{\headrulewidth}{0pt}
+
+
+\pagestyle{fancy}
+\cfoot{\thepage\hspace{1pt}/\pageref{LastPage}}
+
+
+\begin{document}
+
+
+\begin{wrapfigure}{L}{20px}
+\includegraphics[width=1.5cm,height=1.3cm,keepaspectratio]{logo_ee.png}
+\end{wrapfigure}
+
+Politechnika Warszawska 
+\hfill Data utworzenia: 31/01/2016
+
+Wydzia³ Elektryczny
+\hfill Ostatnia modyfikacja: \today
+
+\quad
+\begin{center}
+\center \Huge Ekploracja Danych
+\center \large Projekt - grupa 22
+\vspace{0.5cm}\\
+\small Autorzy: Micha³ Jereczek, Mateusz Oœko
+\end{center}
+
+\tableofcontents
+\pagebreak
+
+\pagebreak
+\section{Zadanie 2 - Ocena wizualna}
+\subsection{Treœæ zadania}
+Oceñ wizualnie (analizuj¹c wykresy punktowe, macierz wykresów punktowych) czy
+podzia³ na grupy reprezentowany przez atrybut decyzyjny odpowiada naturalnym
+skupieniom danych w przestrzeni atrybutów
+\subsection{Wykonanie zadania}
+
+\noindent Wczytanie prerekwizytów.
+\begin{lstlisting}[frame=single]
+install.packages(c("rgl", "car"))
+library("car")
+source('E:/Users/Michal/Git/ED/eksplo.R')
+dane <- read.table("zestaw_22.dat")
+\end{lstlisting}
+
+\noindent Wyœwietlenie macierzy wykresów punktowych oraz wybranych pojedynczych wykresów.
+\begin{lstlisting}[frame=single]
+pokaz(dane)
+pokaz(dane, opis=c(4,7))
+pokaz(dane, opis=c(3,2))
+pokaz(dane, opis=c(5,7))
+\end{lstlisting}
+\begin{center}
+\includegraphics[width=0.8\textwidth]{zad2/2_1.png}
+\includegraphics[width=0.8\textwidth]{zad2/2_2.png}
+\includegraphics[width=0.5\textwidth]{zad2/2_3.png}\includegraphics[width=0.5\textwidth]{zad2/2_4.png}
+\end{center}
+
+\noindent Na podstawie macierzy wykresów mo¿na dojœæ do mniosku, ¿e podzia³ na grupy odpowiada naturalnym skupiskom danych (idelnie na przyk³ad dla V7/V4), jednak mo¿na wyró¿niæ takie pary atrybutów, dla których odwzorowanie to nie bêdzie idealne. Takimi przyk³adowymi parami s¹ V3/V2 oraz V5/V7. 
+
+\pagebreak
+\noindent Postanowi³em odwzorowaæ zale¿noœci V5/V7/V3 na p³aszczyŸnie trójwymiarowej.
+\vspace{8pt}
+
+\begin{lstlisting}[frame=single]
+scatter3d(x = dane$V5, y = dane$V7, z = dane$V3, groups =
+dane$klasa,surface=FALSE, grid = FALSE, ellipsoid = TRUE)
+\end{lstlisting}
+
+\begin{center}
+\includegraphics[width=1.0\textwidth]{zad2/2_6.png}
+\end{center}
+
+\subsection{Wnioski}
+\noindent Na podstawie wykresu zale¿noœci V5/V7/V3 ewidentnie widaæ, ¿e atrybuty decyzyjne nie oddaj¹ idealnie stanu naturalnych skupisk danych, grupy A i C posiadaj¹ czêœæ wspóln¹. Mo¿na stwierdziæ, ¿e podzia³ na grupy przejawia tendencjê do odwzorowania skupisk danych, jednak nie jest to podzia³ idealny.
+
+\pagebreak
+
+\section{Zadanie 3 i 4 - Badanie klasyfikatorów}
+\subsection{Treœæ zadania}
+Przetestuj dostêpne klasyfikatory, oceñ czy do poprawnej klasyfikacji nale¿y
+wykorzystaæ wszystkie atrybuty, czy wystarczy ich podzbiór ? Oceñ czy wybrane
+atrybuty wymagaj¹ normalizacji lub standaryzacji. Jeœli tak, to wykonaj j¹.
+Przyjmij sensown¹ miarê jakoœci klasyfikacji i znajdŸ zgodny z ni¹ najlepszy klasyfikator. 
+
+\subsection{Wykonanie zadania}
+Najpierw przygotowa³em dane. Jako, ¿e wspó³czynnik zmiennoœci dla minimalnych wartoœci atrybutów wyniós³ -0.47 to dane podda³em normalizacji.
+
+\begin{lstlisting}[frame=single]
+#Przygotowanie
+source('E:/Users/Michal/Git/ED/eksplo.R')
+dane <- read.table("zestaw_22.dat")
+
+#Sprawdzam czy dane trzeba znormalizowac
+minima = najmniejsze(dane, opis=c(1,2,3,4,5,6,7,8,9))
+zmiennosc = sd(minima)/mean(minima)
+
+#Zmiennosc wyniosla -0.47 wiec dane normalizujemy
+dane=normalizuj(dane)
+
+#Podzielenie danych na uczace i testowe
+podzial = podziel(dane, p=0.5)
+\end{lstlisting}
+
+Sprawdzi³em jak dobór atrybutów wp³ynie na wyniki klasyfikacji. W tym celu pos³u¿y³em siê klasyfikatorem najbli¿szego prototypu.
+
+\begin{lstlisting}[frame=single]
+#Weryfikacja: Przypadek 1 - atrybuty silnie wplywajace
+weryfikuj('np', dane, podzial, c(7,8))
+
+#Weryfikacja: Przypadek 2 - atrybuty slabo wplywajace
+weryfikuj('np', dane, podzial, c(2,6))
+
+#Weryfikacja: Przypadek 3 - duza ilosc atrybutow
+weryfikuj('np', dane, podzial, c(1,3,5,7,9))
+
+#Weryfikacja: Przypadek 4 - trzy atrybuty
+weryfikuj('np', dane, podzial, c(3,6,2))
+\end{lstlisting}
+
+\pagebreak
+Poni¿ej przedstawiam histogram pokazuj¹cy liczbê b³êdnych klasyfikacji dla danych ucz¹cych oraz testowych.
+
+\begin{center}
+\includegraphics[width=0.95\textwidth]{zad3/3_4.png}
+\end{center}
+
+Dla wybranych atrybutów V6 i V2 przeprowadzi³em weryfikacjê klasyfikacji. 
+Specjalnie wybra³em atrybuty, dla których grupy nachodz¹ na siebie, aby klasyfikatory mia³y trudniejsze zadanie (by by³a mo¿liwa ocena ich poprawnoœci wzglêdem siebie).
+
+\begin{center}
+\includegraphics[width=0.58\textwidth]{zad3/3_1.png}
+\end{center}
+
+\begin{lstlisting}[frame=single]
+#Weryfikacja: klasyfikator k-najblizszych sasiadow - k=1
+weryfikuj('knn', dane, podzial, atr, k=1)
+
+#Weryfikacja: klasyfikator k-najblizszych sasiadow - k=3
+weryfikuj('knn', dane, podzial, atr, k=3)
+
+#Weryfikacja: klasyfikator k-najblizszych sasiadow - k=9
+weryfikuj('knn', dane, podzial, atr, k=9)
+
+#Weryfikacja: drzewo decyzyjne - k=75
+weryfikuj('drzewo', dane, podzial, atr, k=75)
+
+#Weryfikacja: drzewo decyzyjne - k=50
+weryfikuj('drzewo', dane, podzial, atr, k=50)
+
+#Weryfikacja: drzewo decyzyjne - k=1
+weryfikuj('drzewo', dane, podzial, atr, k=1)
+
+#Weryfikacja: klasyfikator najblizszego prototypu
+weryfikuj('np', dane, podzial, atr)
+
+#Weryfikacja: naiwny klasyfikator Bayesa
+weryfikuj('bayes', dane, podzial, atr)
+\end{lstlisting}
+
+Poni¿ej przedstawiam histogram pokazuj¹cy liczbê b³êdnych klasyfikacji dla danych ucz¹cych oraz testowych.
+
+\begin{center}
+\includegraphics[width=0.95\textwidth]{zad3/3_2.png}
+\end{center}
+
+\subsubsection{Wnioski}
+Najgorzej sprawi³ siê klasyfikator najbli¿szego prototypu, gdzie zosta³o Ÿle sklasyfikowanych ponad 20 obiektów testowych jak i ucz¹cych (94\% skutecznoeœci).  Pod wzglêdem skutecznoœci wobec danych ucz¹cych najlepszy by³ klasyfikator k-najbli¿szych s¹siadów dla k=1, nie pomyli³ siê ani razu. 
+
+W ogólnym rozrachunku najefektywniejszy by³ klasyfikator k-najbli¿szych s¹siadów dla dla k=9, gdzie w przypadku danych testowych i ucz¹cych pomyli³ siê tylko 10 razy (97\% skutecznoeœci).
+
+Aby uzyskaæ wysok¹ skutecznoœc klasyfikatora nie zawsze jest potrzeba u¿ywania du¿ej iloœci atrybutów, czasami wystarczy chocia¿by para atrybutów, które maj¹ bardzo silny zwi¹zek z klasyfikacj¹. W testowanym przypadku weryfikacja klasyfikacji by³a bezb³êdna dla dwóch przypadków: gdy para atrybutów silnie oddzia³owuje na wynik klasyfikacji oraz gdy do klasyfikacji wykorzystana by³a znacz¹ca iloœæ atrybutów.
+
+\pagebreak
+
+\section{ród³a}
+\begin{itemize}
+\item Podstawowe metody analizy, klasyfikacji i grupowania danych
+– æwiczenia w œrodowisku, dr hab. in¿. M. Iwanowski
+\item http://www.sthda.com/english/wiki/amazing-interactive-3d-scatter-plots-r-software-and-data-visualization
+\end{itemize}
+
+
+
+
+\end{document}
